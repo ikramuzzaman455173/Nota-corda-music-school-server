@@ -53,7 +53,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('<h1 style="color:#333;text-align:center;font-size:20px;margin:10px 0;">Coffee Store Server Is Running !!!</h1>')
+  res.send('<h1 style="color:#333;text-align:center;font-size:20px;margin:10px 0;">Summer Camp School Server Is Running !!!</h1>')
 })
 
 app.listen(port, () => {
