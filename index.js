@@ -54,8 +54,21 @@ async function run() {
       res.send({ token })
     })
 
-
-
+    //put all users
+      app.put('/users/:email',async (req,res) => {
+        const email = req.params.email
+        console.log(`email:${email}`);
+        const user = req.body
+        console.log(`user:`,user);
+        const query = { email: email }
+        const options = { upsert: true }
+        const updateDoc = {
+          $set:user,
+        }
+        const result = await usersCollection.updateOne(query,updateDoc,options)
+        // console.log('result', result);
+        res.send(result)
+      })
 
 
 
