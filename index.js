@@ -46,8 +46,8 @@ async function run() {
     const usersCollection = client.db('simpleDb').collection('users')
 
 
-     //post jwt
-     app.post('/jwt', (req, res) => {
+    //post jwt
+    app.post('/jwt', (req, res) => {
       const user = req.body
       // console.log('user',user);
       const token = jwt.sign(user, process.env.access_token_secreat_key, { expiresIn: '1h' })
