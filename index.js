@@ -11,6 +11,22 @@ app.use(cors())
 app.use(express.json())
 
 //vairify jwt setup
+//varify jwt
+const varifyJwt = (req, res, next) => {
+  const authorization = req.headers.authorization
+  if (!authorization) {
+    return res.status(401).send({ error: true, message: 'unauthorized access' })
+  }
+  //bearer token
+  const token = authorization.split(' ')[1]
+  jwt.verify(token, process.env.access_token_secreat_key, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ error: true, message: 'unauthorized access' })
+    }
+    req.decoded = decoded
+    next()
+  })
+}
 
 const uri = `mongodb+srv://${process.env.dbuser}:${process.env.dbPass}@cluster0.izhktyr.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -30,6 +46,13 @@ async function run() {
     const usersCollection = client.db('simpleDb').collection('users')
 
 
+     //post jwt
+     app.post('/jwt', (req, res) => {
+      const user = req.body
+      // console.log('user',user);
+      const token = jwt.sign(user, process.env.access_token_secreat_key, { expiresIn: '1h' })
+      res.send({ token })
+    })
 
 
 
