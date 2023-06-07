@@ -43,8 +43,7 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const usersCollection = client.db('simpleDb').collection('users')
-
+    const usersCollection = client.db('summerCampSchool').collection('users')
 
     //post jwt
     app.post('/jwt', (req, res) => {
