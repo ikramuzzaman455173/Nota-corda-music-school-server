@@ -44,6 +44,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const usersCollection = client.db('summerCampSchool').collection('users')
+    const classesCollection = client.db('summerCampSchool').collection('allClasses')
 
     //post jwt
     app.post('/jwt', (req, res) => {
@@ -70,6 +71,13 @@ async function run() {
       })
 
 
+    // summer camp school classes
+    app.get('/allClass', async (req, res) => {
+      const result = await classesCollection.find({}).toArray()
+      res.send(result)
+    })
+
+
 
 
 
@@ -86,11 +94,10 @@ run().catch(console.dir);
 
 
 
-
 app.get('/', (req, res) => {
   res.send('<h1 style="color:#333;text-align:center;font-size:20px;margin:10px 0;">Summer Camp School Server Is Running !!!</h1>')
 })
 
 app.listen(port, () => {
-  console.log(`The Server Is Running On Port: ${port}`)
+  console.log(`Summer Camp School Server Is Running On Port:http://localhost:${port}`);
 })
