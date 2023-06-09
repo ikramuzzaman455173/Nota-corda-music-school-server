@@ -45,6 +45,7 @@ async function run() {
     await client.connect();
     const usersCollection = client.db('summerCampSchool').collection('users')
     const classesCollection = client.db('summerCampSchool').collection('allClasses')
+    const instructorsCollection = client.db('summerCampSchool').collection('instructors')
 
     //post jwt
     app.post('/jwt', (req, res) => {
@@ -73,10 +74,25 @@ async function run() {
 
     // summer camp school classes
     app.get('/allClass', async (req, res) => {
-      const result = await classesCollection.find({}).toArray()
+      const result = await classesCollection.find({}, {
+        projection: {
+          class_name: 1,
+          image: 1,
+          class_level: 1,
+          description: 1,
+          price: 1,
+          status:1
+        }
+      }).toArray();
+      res.send(result);
+    });
+
+
+    // summer camp school allInstructors
+    app.get('/instructors',async (req,res) => {
+      const result = await instructorsCollection.find({}).toArray()
       res.send(result)
     })
-
 
 
 
