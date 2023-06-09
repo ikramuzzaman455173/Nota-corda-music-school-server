@@ -3,7 +3,7 @@ const app = express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require("dotenv").config();
 // const stripe = require("stripe")(process.env.payment_secreat_key);
-// const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 4000
 const cors = require('cors');
 
@@ -11,7 +11,6 @@ app.use(cors())
 app.use(express.json())
 
 //vairify jwt setup
-//varify jwt
 const varifyJwt = (req, res, next) => {
   const authorization = req.headers.authorization
   if (!authorization) {
@@ -46,6 +45,7 @@ async function run() {
     const usersCollection = client.db('summerCampSchool').collection('users')
     const classesCollection = client.db('summerCampSchool').collection('allClasses')
     const instructorsCollection = client.db('summerCampSchool').collection('instructors')
+    const selectClassesCollection = client.db('summerCampSchool').collection('selectClasses')
 
     //post jwt
     app.post('/jwt', (req, res) => {
@@ -74,16 +74,7 @@ async function run() {
 
     // summer camp school classes
     app.get('/allClass', async (req, res) => {
-      const result = await classesCollection.find({}, {
-        projection: {
-          class_name: 1,
-          image: 1,
-          class_level: 1,
-          description: 1,
-          price: 1,
-          status:1
-        }
-      }).toArray();
+      const result = await classesCollection.find({}).toArray()
       res.send(result);
     });
 
@@ -93,6 +84,32 @@ async function run() {
       const result = await instructorsCollection.find({}).toArray()
       res.send(result)
     })
+
+    // select classes part
+      //carts collections related api
+      app.get('/selectClasses', varifyJwt, async (req, res) => {
+        const email = req.query.email
+        console.log(email);
+        if (!email) {
+          res.send([])
+        }
+        const decodedEmail = req.decoded.email
+        if (email !== decodedEmail) {
+          return res.status(403).send({ error: true, message: 'forbidden access' })
+        }
+        const query = { email: email }
+        const result = await selectClassesCollection.find(query).toArray()
+        // console.log(result,'result');
+        res.send(result)
+      })
+
+
+      app.post('/selectClasses', async (req, res) => {
+        const item = req.body
+        // console.log(item,'item');
+        const result = await selectClassesCollection.insertOne(item)
+        res.send(result)
+      })
 
 
 
