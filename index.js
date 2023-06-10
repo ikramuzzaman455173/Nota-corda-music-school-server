@@ -59,9 +59,9 @@ async function run() {
     //put all users
     app.put('/users/:email', async (req, res) => {
       const email = req.params.email
-      console.log(`email:${email}`);
+      // console.log(`email:${email}`);
       const user = req.body
-      console.log(`user:`, user);
+      // console.log(`user:`, user);
       const query = { email: email }
       const options = { upsert: true }
       const updateDoc = {
@@ -143,7 +143,7 @@ async function run() {
         const insertResult = await paymentCollection.insertOne(payment);
         const classId = payment.selectClassId;
         const selectClassId = payment.selectClassItems
-        console.log(selectClassId);
+        // console.log(selectClassId);
 
         const updateResult = await classesCollection.updateOne(
           { _id:new ObjectId(classId) },
