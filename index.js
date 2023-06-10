@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require("dotenv").config();
-// const stripe = require("stripe")(process.env.payment_secreat_key);
+const stripe = require("stripe")(process.env.payment_secreat_key);
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 4000
 const cors = require('cors');
@@ -46,6 +46,7 @@ async function run() {
     const classesCollection = client.db('summerCampSchool').collection('allClasses')
     const instructorsCollection = client.db('summerCampSchool').collection('instructors')
     const selectClassesCollection = client.db('summerCampSchool').collection('selectClasses')
+    const paymentCollection = client.db('summerCampSchool').collection('payments')
 
     //post jwt
     app.post('/jwt', (req, res) => {
@@ -56,20 +57,20 @@ async function run() {
     })
 
     //put all users
-      app.put('/users/:email',async (req,res) => {
-        const email = req.params.email
-        console.log(`email:${email}`);
-        const user = req.body
-        console.log(`user:`,user);
-        const query = { email: email }
-        const options = { upsert: true }
-        const updateDoc = {
-          $set:user,
-        }
-        const result = await usersCollection.updateOne(query,updateDoc,options)
-        // console.log('result', result);
-        res.send(result)
-      })
+    app.put('/users/:email', async (req, res) => {
+      const email = req.params.email
+      console.log(`email:${email}`);
+      const user = req.body
+      console.log(`user:`, user);
+      const query = { email: email }
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: user,
+      }
+      const result = await usersCollection.updateOne(query, updateDoc, options)
+      // console.log('result', result);
+      res.send(result)
+    })
 
 
     // summer camp school classes
@@ -80,36 +81,114 @@ async function run() {
 
 
     // summer camp school allInstructors
-    app.get('/instructors',async (req,res) => {
+    app.get('/instructors', async (req, res) => {
       const result = await instructorsCollection.find({}).toArray()
       res.send(result)
     })
 
     // select classes part
-      //carts collections related api
-      app.get('/selectClasses', varifyJwt, async (req, res) => {
-        const email = req.query.email
-        console.log(email);
-        if (!email) {
-          res.send([])
-        }
-        const decodedEmail = req.decoded.email
-        if (email !== decodedEmail) {
-          return res.status(403).send({ error: true, message: 'forbidden access' })
-        }
-        const query = { email: email }
-        const result = await selectClassesCollection.find(query).toArray()
-        // console.log(result,'result');
-        res.send(result)
-      })
+    //carts collections related api
+    app.get('/selectClasses', varifyJwt, async (req, res) => {
+      const email = req.query.email
+      // console.log(email);
+      if (!email) {
+        res.send([])
+      }
+      const decodedEmail = req.decoded.email
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+      const query = { email: email }
+      const result = await selectClassesCollection.find(query).toArray()
+      // console.log(result,'result');
+      res.send(result)
+    })
 
 
-      app.post('/selectClasses', async (req, res) => {
-        const item = req.body
-        // console.log(item,'item');
-        const result = await selectClassesCollection.insertOne(item)
-        res.send(result)
+    app.post('/selectClasses', async (req, res) => {
+      const item = req.body
+      // console.log(item,'item');
+      const result = await selectClassesCollection.insertOne(item)
+      res.send(result)
+    })
+
+    app.delete('/selectClasses/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await selectClassesCollection.deleteOne(query)
+      res.send(result)
+    })
+
+
+
+
+
+    // create payments intent
+    app.post('/payment', varifyJwt, async (req, res) => {
+      const { price } = req.body
+      const amount = parseInt(price * 100)
+      console.log('price', price, 'amount', amount);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
       })
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+
+    // // payment related api
+    // app.post('/payments',varifyJwt,async (req,res) => {
+    //   const payment = req.body
+    //   const insertResult = await paymentCollection.insertOne(payment)
+
+    //   // const query = {_id:{$in:payment.cartItems?.map(id => new ObjectId(id)) } }
+    //   // console.log(payment,'payment');
+    //   const query = {_id: { $in:payment.selectClassItems.map(id => new ObjectId(id)) }}
+    //   const updateResult = await selectClassesCollection.updateMany(query, { $set: { payment: true } });
+    //   res.send({insertResult,updateResult})
+    // })
+
+
+    // app.post('/payments',varifyJwt, async (req, res) => {
+    //   try {
+    //     const payment = req.body;
+    //     const insertResult = await paymentCollection.insertOne(payment)
+    //     const classIds = payment.selectClassId
+    //     const updateResult = await classesCollection.updateOne(
+    //       { _id: { $in: classIds } },
+    //       { $inc: { available_seats: -1 } }
+    //     );
+
+    //     console.log(updateResult,'up');
+
+    //     res.send({ success: true, message: 'Payment successful',insertResult, updateResult });
+    //   } catch (error) {
+    //     res.status(500).send({ success: false, message: 'Payment failed', error });
+    //   }
+    // });
+
+
+    app.post('/payments', varifyJwt, async (req, res) => {
+      try {
+        const payment = req.body;
+        const insertResult = await paymentCollection.insertOne(payment);
+        const classId = payment.selectClassId;
+
+        const updateResult = await classesCollection.updateOne(
+          { _id: classId },
+          { $inc: { available_seats: -1 } }
+        );
+
+        // console.log(updateResult, 'up');
+
+        res.send({ success: true, message: 'Payment successful', insertResult, updateResult });
+      } catch (error) {
+        res.status(500).send({ success: false, message: 'Payment failed', error });
+      }
+    });
 
 
 
