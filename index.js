@@ -121,13 +121,11 @@ async function run() {
 
 
 
-
-
     // create payments intent
     app.post('/payment', varifyJwt, async (req, res) => {
       const { price } = req.body
       const amount = parseInt(price * 100)
-      console.log('price', price, 'amount', amount);
+      // console.log('price', price, 'amount', amount);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'usd',
@@ -139,56 +137,59 @@ async function run() {
     })
 
 
-    // // payment related api
-    // app.post('/payments',varifyJwt,async (req,res) => {
-    //   const payment = req.body
-    //   const insertResult = await paymentCollection.insertOne(payment)
-
-    //   // const query = {_id:{$in:payment.cartItems?.map(id => new ObjectId(id)) } }
-    //   // console.log(payment,'payment');
-    //   const query = {_id: { $in:payment.selectClassItems.map(id => new ObjectId(id)) }}
-    //   const updateResult = await selectClassesCollection.updateMany(query, { $set: { payment: true } });
-    //   res.send({insertResult,updateResult})
-    // })
-
-
-    // app.post('/payments',varifyJwt, async (req, res) => {
-    //   try {
-    //     const payment = req.body;
-    //     const insertResult = await paymentCollection.insertOne(payment)
-    //     const classIds = payment.selectClassId
-    //     const updateResult = await classesCollection.updateOne(
-    //       { _id: { $in: classIds } },
-    //       { $inc: { available_seats: -1 } }
-    //     );
-
-    //     console.log(updateResult,'up');
-
-    //     res.send({ success: true, message: 'Payment successful',insertResult, updateResult });
-    //   } catch (error) {
-    //     res.status(500).send({ success: false, message: 'Payment failed', error });
-    //   }
-    // });
-
-
     app.post('/payments', varifyJwt, async (req, res) => {
       try {
         const payment = req.body;
         const insertResult = await paymentCollection.insertOne(payment);
         const classId = payment.selectClassId;
+        const selectClassId = payment.selectClassItems
+        console.log(selectClassId);
 
         const updateResult = await classesCollection.updateOne(
-          { _id: classId },
+          { _id:new ObjectId(classId) },
           { $inc: { available_seats: -1 } }
         );
 
-        // console.log(updateResult, 'up');
+        const updateSelectClass = await selectClassesCollection.updateOne(
+          { _id:new ObjectId(selectClassId) },
+          { $set: {payment:true } }
+        );
 
-        res.send({ success: true, message: 'Payment successful', insertResult, updateResult });
+
+        // console.log(updateResult, 'up');
+        // console.log(updateSelectClass, 'updates');
+
+        res.send({ success: true, message: 'Payment successful', insertResult, updateResult,updateSelectClass});
       } catch (error) {
         res.status(500).send({ success: false, message: 'Payment failed', error });
       }
     });
+
+
+      // // payment history api
+      app.get('/paymentHistory', varifyJwt, async (req, res) => {
+        const email = req.query.email
+        // console.log(email);
+        if (!email) {
+          res.send([])
+        }
+        const decodedEmail = req.decoded.email
+        if (email !== decodedEmail) {
+          return res.status(403).send({ error: true, message: 'forbidden access' })
+        }
+        const query = { email: email }
+        const result = await paymentCollection.find(query).sort({ date: -1 }).toArray()
+        // console.log(result,'result');
+        res.send(result)
+      })
+
+    //payment history delete
+    app.delete('/payHistory/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await paymentCollection.deleteOne(query)
+      res.send(result)
+    })
 
 
 
