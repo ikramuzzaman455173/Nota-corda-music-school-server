@@ -68,21 +68,20 @@ async function run() {
     }
 
 
-    //put all users
-    app.put('/users/:email', async (req, res) => {
-      const email = req.params.email
-      // console.log(`email:${email}`);
-      const user = req.body
-      // console.log(`user:`, user);
-      const query = { email: email }
-      const options = { upsert: true }
-      const updateDoc = {
-        $set: user,
+    // database users data hanlde api
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email }
+      const existingUser = await usersCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: 'user already exists' })
       }
-      const result = await usersCollection.updateOne(query, updateDoc, options)
-      // console.log('result', result);
-      res.send(result)
-    })
+
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
 
     // all users data related routes
     app.get('/users/instructor/:email', varifyJwt, async (req, res) => {
@@ -99,23 +98,19 @@ async function run() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     // summer camp school classes
     app.get('/allClass', async (req, res) => {
       const result = await classesCollection.find({}).toArray()
       res.send(result);
     });
+
+    //all allClass api new class add
+    app.post('/allClass',varifyJwt,varifyInstructorJwt,async (req,res) => {
+      const classData = req.body;
+      // console.log(classData,'classData');
+      const result = await classesCollection.insertOne(classData);
+      res.send(result);
+    })
 
 
     // summer camp school allInstructors
