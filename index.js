@@ -144,9 +144,13 @@ async function run() {
         const classId = payment.selectClassId;
         const selectClassId = payment.selectClassItems
         // console.log(selectClassId);
+        const classData = await classesCollection.findOne({ _id: new ObjectId(classId) });
+        if (classData.available_seats === 0) {
+          throw new Error('No available seats');
+        }
 
         const updateResult = await classesCollection.updateOne(
-          { _id:new ObjectId(classId) },
+          { _id: new ObjectId(classId), available_seats: { $gt: 0 } },
           { $inc: { available_seats: -1 } }
         );
 
