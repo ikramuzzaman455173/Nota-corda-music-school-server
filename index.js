@@ -56,6 +56,18 @@ async function run() {
       res.send({ token })
     })
 
+    // varifyInstruccor Jwt
+    const varifyInstructorJwt = async (req, res, next) => {
+      const email = req.decoded.email
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      if (user?.role !== 'instructor') {
+        return res.status(403).send({ error: true, message: 'forbidden message' })
+      }
+      next()
+    }
+
+
     //put all users
     app.put('/users/:email', async (req, res) => {
       const email = req.params.email
@@ -71,6 +83,32 @@ async function run() {
       // console.log('result', result);
       res.send(result)
     })
+
+    // all users data related routes
+    app.get('/users/instructor/:email', varifyJwt, async (req, res) => {
+      const email = req.params.email
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false })
+      }
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      const result = { instructor: user?.role === 'instructor' }
+      res.send(result)
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // summer camp school classes
@@ -155,37 +193,37 @@ async function run() {
         );
 
         const updateSelectClass = await selectClassesCollection.updateOne(
-          { _id:new ObjectId(selectClassId) },
-          { $set: {payment:true } }
+          { _id: new ObjectId(selectClassId) },
+          { $set: { payment: true } }
         );
 
 
         // console.log(updateResult, 'up');
         // console.log(updateSelectClass, 'updates');
 
-        res.send({ success: true, message: 'Payment successful', insertResult, updateResult,updateSelectClass});
+        res.send({ success: true, message: 'Payment successful', insertResult, updateResult, updateSelectClass });
       } catch (error) {
         res.status(500).send({ success: false, message: 'Payment failed', error });
       }
     });
 
 
-      // // payment history api
-      app.get('/paymentHistory', varifyJwt, async (req, res) => {
-        const email = req.query.email
-        // console.log(email);
-        if (!email) {
-          res.send([])
-        }
-        const decodedEmail = req.decoded.email
-        if (email !== decodedEmail) {
-          return res.status(403).send({ error: true, message: 'forbidden access' })
-        }
-        const query = { email: email }
-        const result = await paymentCollection.find(query).sort({ date: -1 }).toArray()
-        // console.log(result,'result');
-        res.send(result)
-      })
+    // // payment history api
+    app.get('/paymentHistory', varifyJwt, async (req, res) => {
+      const email = req.query.email
+      // console.log(email);
+      if (!email) {
+        res.send([])
+      }
+      const decodedEmail = req.decoded.email
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+      const query = { email: email }
+      const result = await paymentCollection.find(query).sort({ date: -1 }).toArray()
+      // console.log(result,'result');
+      res.send(result)
+    })
 
     //payment history delete
     app.delete('/payHistory/:id', async (req, res) => {
