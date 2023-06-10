@@ -104,13 +104,75 @@ async function run() {
       res.send(result);
     });
 
+    // allClass get instructor api
+    app.get('/instructorClass', varifyJwt, async (req, res) => {
+      const email = req.query.email
+      // console.log(email);
+      if (!email) {
+        res.send([])
+      }
+      const decodedEmail = req.decoded.email
+      if (email !== decodedEmail) {
+        return res.status(403).send({ error: true, message: 'forbidden access' })
+      }
+      const query = { email: email }
+      const result = await classesCollection.find(query).toArray()
+      // console.log(result,'result');
+      res.send(result)
+    })
+
+    // get single instructor class data data
+    app.get('/allClass/:id', async (req, res) => {
+      const id = req.params.id
+      // console.log(id);
+      const query = { _id: new ObjectId(id) }
+      const singleClass = await classesCollection.findOne(query);
+      res.send(singleClass)
+    })
+
+
     //all allClass api new class add
-    app.post('/allClass',varifyJwt,varifyInstructorJwt,async (req,res) => {
+    app.post('/allClass', varifyJwt, varifyInstructorJwt, async (req, res) => {
       const classData = req.body;
       // console.log(classData,'classData');
       const result = await classesCollection.insertOne(classData);
       res.send(result);
     })
+
+    //all allClass api new class add
+    app.put('/allClass/:id', varifyJwt, varifyInstructorJwt, async (req, res) => {
+      const id = req.params.id
+      const updateClass = req.body;
+      // console.log(classData,'classData');
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateClassData = {
+        $set: {
+          instructor_name: updateClass.instructor_name,
+          email: updateClass.email,
+          class_name: updateClass.class_name,
+          price: updateClass.price,
+          image: updateClass.image,
+          class_level: updateClass.class_level,
+          description: updateClass.description,
+          class_duration: updateClass.class_duration,
+          available_seats: updateClass.available_seats,
+          status: updateClass.status,
+          students: updateClass.students,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateClassData, options);
+      res.send(result);
+    })
+
+    // instructor class delete api
+    app.delete('/allClass/:id', varifyJwt, varifyInstructorJwt, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await classesCollection.deleteOne(query)
+      res.send(result)
+    })
+
 
 
     // summer camp school allInstructors
@@ -120,7 +182,6 @@ async function run() {
     })
 
     // select classes part
-    //carts collections related api
     app.get('/selectClasses', varifyJwt, async (req, res) => {
       const email = req.query.email
       // console.log(email);
@@ -184,7 +245,7 @@ async function run() {
 
         const updateResult = await classesCollection.updateOne(
           { _id: new ObjectId(classId), available_seats: { $gt: 0 } },
-          { $inc: { available_seats: -1 } }
+          { $inc: { available_seats: -1, students: 1 } }
         );
 
         const updateSelectClass = await selectClassesCollection.updateOne(
