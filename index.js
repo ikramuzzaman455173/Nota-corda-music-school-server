@@ -200,6 +200,35 @@ async function run() {
       res.send(result);
     })
 
+
+    //all allClass api new class add
+    app.put('/allClassFeeddback/:id', varifyJwt, varifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const feedbackClass = req.body;
+      // console.log(classData,'classData');
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const feedbackClassData = {
+        $set: {
+          instructor_name: feedbackClass.instructor_name,
+          email: feedbackClass.email,
+          class_name: feedbackClass.class_name,
+          price: feedbackClass.price,
+          image: feedbackClass.image,
+          class_level: feedbackClass.class_level,
+          description: feedbackClass.description,
+          class_duration: feedbackClass.class_duration,
+          available_seats: feedbackClass.available_seats,
+          status: feedbackClass.status,
+          students: feedbackClass.students,
+          feedback:feedbackClass.feedback,
+        },
+      };
+      const result = await classesCollection.updateOne(filter, feedbackClassData, options);
+      res.send(result);
+    })
+
+
     // instructor class delete api
     app.delete('/allClass/:id', varifyJwt, varifyInstructorJwt, async (req, res) => {
       const id = req.params.id
@@ -363,8 +392,6 @@ async function run() {
     })
 
 
-
-
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -385,4 +412,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Summer Camp School Server Is Running On Port:http://localhost:${port}`);
 })
-
