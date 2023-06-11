@@ -184,6 +184,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/PopularClasses', async (req, res) => {
+      const result = await classesCollection.find({status:'approved'})
+        .sort({ students: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result)
+    });
+
     // allClass get instructor api
     app.get('/instructorClass', varifyJwt, async (req, res) => {
       const email = req.query.email
@@ -329,7 +337,7 @@ async function run() {
     })
 
     // update and add inturctors
-    app.post('/instructors',varifyJwt,varifyAdmin, async (req, res) => {
+    app.post('/instructors', varifyJwt, varifyAdmin, async (req, res) => {
       const instructor = req.body;
       const query = { email: instructor.email }
       // console.log(user,'user');
@@ -343,8 +351,18 @@ async function run() {
     });
 
 
+    // app.delete('/deleteInstructor', async (req, res) => {
+    //   const instructor = req.body;
+    //   console.log(instructor,'instructor');
+    //   const query = { email: instructor.email }
+    //   const existingInstructor = await instructorsCollection.findOne(query);
 
-
+    //   if (existingInstructor) {
+    //     return res.send({ message: 'instructor already exists' })
+    //   }
+    //   const result = await instructorsCollection.deleteOne(instructor);
+    //   res.send(result);
+    // });
 
     // select classes part
     app.get('/selectClasses', varifyJwt, async (req, res) => {
