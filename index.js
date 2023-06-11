@@ -80,9 +80,15 @@ async function run() {
 
 
     // database users data hanlde api
-    app.post('/users',varifyJwt, async (req, res) => {
+    app.get('/users', varifyJwt, varifyAdmin, async (req, res) => {
+      const users = await usersCollection.find({}).toArray()
+      res.send(users)
+    })
+
+    app.post('/users', async (req, res) => {
       const user = req.body;
       const query = { email: user.email }
+      // console.log(user,'user');
       const existingUser = await usersCollection.findOne(query);
 
       if (existingUser) {
@@ -92,6 +98,45 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    app.delete('/users/:id', varifyJwt, varifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await usersCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    //update users role
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id
+      // console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      // console.log(filter);
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+    //update instructor role
+    app.patch('/users/instructor/:id', async (req, res) => {
+      const id = req.params.id
+      // console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      // console.log(filter);
+      const updateDoc = {
+        $set: {
+          role: 'instructor'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
 
 
     // all users data related routes
@@ -221,7 +266,7 @@ async function run() {
           available_seats: feedbackClass.available_seats,
           status: feedbackClass.status,
           students: feedbackClass.students,
-          feedback:feedbackClass.feedback,
+          feedback: feedbackClass.feedback,
         },
       };
       const result = await classesCollection.updateOne(filter, feedbackClassData, options);
@@ -238,7 +283,7 @@ async function run() {
     })
 
     // admin update instructor class status
-    app.patch('/allClass/admin/:id',varifyJwt,varifyAdmin, async (req, res) => {
+    app.patch('/allClass/admin/:id', varifyJwt, varifyAdmin, async (req, res) => {
       const id = req.params.id
       // console.log(id);
       const filter = { _id: new ObjectId(id) }
@@ -253,7 +298,7 @@ async function run() {
     })
 
     // admin update instructor class status
-    app.patch('/allClass/adminDenied/:id',varifyJwt,varifyAdmin, async (req, res) => {
+    app.patch('/allClass/adminDenied/:id', varifyJwt, varifyAdmin, async (req, res) => {
       const id = req.params.id
       // console.log(id);
       const filter = { _id: new ObjectId(id) }
@@ -283,6 +328,24 @@ async function run() {
       res.send(result)
     })
 
+    // update and add inturctors
+    app.post('/instructors',varifyJwt,varifyAdmin, async (req, res) => {
+      const instructor = req.body;
+      const query = { email: instructor.email }
+      // console.log(user,'user');
+      const existingInstructor = await instructorsCollection.findOne(query);
+
+      if (existingInstructor) {
+        return res.send({ message: 'instructor already exists' })
+      }
+      const result = await instructorsCollection.insertOne(instructor);
+      res.send(result);
+    });
+
+
+
+
+
     // select classes part
     app.get('/selectClasses', varifyJwt, async (req, res) => {
       const email = req.query.email
@@ -301,14 +364,14 @@ async function run() {
     })
 
 
-    app.post('/selectClasses',varifyJwt, async (req, res) => {
+    app.post('/selectClasses', varifyJwt, async (req, res) => {
       const item = req.body
       // console.log(item,'item');
       const result = await selectClassesCollection.insertOne(item)
       res.send(result)
     })
 
-    app.delete('/selectClasses/:id',varifyJwt, async (req, res) => {
+    app.delete('/selectClasses/:id', varifyJwt, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await selectClassesCollection.deleteOne(query)
