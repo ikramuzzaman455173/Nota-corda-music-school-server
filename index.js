@@ -80,7 +80,7 @@ async function run() {
 
 
     // database users data hanlde api
-    app.post('/users', async (req, res) => {
+    app.post('/users',varifyJwt, async (req, res) => {
       const user = req.body;
       const query = { email: user.email }
       const existingUser = await usersCollection.findOne(query);
@@ -95,6 +95,18 @@ async function run() {
 
 
     // all users data related routes
+    app.get('/users/student/:email', varifyJwt, async (req, res) => {
+      const email = req.params.email
+      if (req.decoded.email !== email) {
+        res.send({ student: false })
+      }
+      const query = { email: email }
+      const student = await usersCollection.findOne(query)
+      const result = { student: student?.role === 'user' }
+      res.send(result)
+    })
+
+
     app.get('/users/instructor/:email', varifyJwt, async (req, res) => {
       const email = req.params.email
       if (req.decoded.email !== email) {
@@ -196,6 +208,37 @@ async function run() {
       res.send(result)
     })
 
+    // admin update instructor class status
+    app.patch('/allClass/admin/:id',varifyJwt,varifyAdmin, async (req, res) => {
+      const id = req.params.id
+      // console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      // console.log(filter);
+      const updateDoc = {
+        $set: {
+          status: 'approved'
+        }
+      }
+      const result = await classesCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+    // admin update instructor class status
+    app.patch('/allClass/adminDenied/:id',varifyJwt,varifyAdmin, async (req, res) => {
+      const id = req.params.id
+      // console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      // console.log(filter);
+      const updateDoc = {
+        $set: {
+          status: 'denied'
+        }
+      }
+      const result = await classesCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
     // admin delete instructor classs api
     app.delete('/allClassAdminDelete/:id', varifyJwt, varifyAdmin, async (req, res) => {
       const id = req.params.id
@@ -229,14 +272,14 @@ async function run() {
     })
 
 
-    app.post('/selectClasses', async (req, res) => {
+    app.post('/selectClasses',varifyJwt, async (req, res) => {
       const item = req.body
       // console.log(item,'item');
       const result = await selectClassesCollection.insertOne(item)
       res.send(result)
     })
 
-    app.delete('/selectClasses/:id', async (req, res) => {
+    app.delete('/selectClasses/:id',varifyJwt, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await selectClassesCollection.deleteOne(query)
@@ -342,3 +385,4 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Summer Camp School Server Is Running On Port:http://localhost:${port}`);
 })
+
