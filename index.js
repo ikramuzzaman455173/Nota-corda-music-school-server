@@ -67,6 +67,17 @@ async function run() {
       next()
     }
 
+    // varifyAdmin Jwt
+    const varifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      if (user?.role !== 'admin') {
+        return res.status(403).send({ error: true, message: 'forbidden message' })
+      }
+      next()
+    }
+
 
     // database users data hanlde api
     app.post('/users', async (req, res) => {
@@ -92,6 +103,18 @@ async function run() {
       const query = { email: email }
       const user = await usersCollection.findOne(query)
       const result = { instructor: user?.role === 'instructor' }
+      res.send(result)
+    })
+
+
+    app.get('/users/admin/:email', varifyJwt, async (req, res) => {
+      const email = req.params.email
+      if (req.decoded.email !== email) {
+        res.send({ admin: false })
+      }
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      const result = { admin: user?.role === 'admin' }
       res.send(result)
     })
 
@@ -173,6 +196,13 @@ async function run() {
       res.send(result)
     })
 
+    // admin delete instructor classs api
+    app.delete('/allClassAdminDelete/:id', varifyJwt, varifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await classesCollection.deleteOne(query)
+      res.send(result)
+    })
 
 
     // summer camp school allInstructors
