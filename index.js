@@ -1,11 +1,11 @@
 const express = require('express')
 const app = express()
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require("dotenv").config();
-const stripe = require("stripe")(process.env.payment_secreat_key);
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
-const port = process.env.PORT || 4000
 const cors = require('cors');
+const stripe = require("stripe")(process.env.payment_secreat_key);
+const port = process.env.PORT || 4000
 
 app.use(cors())
 app.use(express.json())
@@ -52,7 +52,7 @@ async function run() {
     app.post('/jwt', (req, res) => {
       const user = req.body
       // console.log('user',user);
-      const token = jwt.sign(user, process.env.access_token_secreat_key, { expiresIn: '1h' })
+      const token = jwt.sign(user, process.env.access_token_secreat_key, { expiresIn: '1d' })
       res.send({ token })
     })
 
@@ -85,6 +85,11 @@ async function run() {
       res.send(users)
     })
 
+    app.get('/allUsers', async (req, res) => {
+      const users = await usersCollection.find({}).toArray()
+      res.send(users)
+    })
+
     app.post('/users', async (req, res) => {
       const user = req.body;
       const query = { email: user.email }
@@ -109,9 +114,7 @@ async function run() {
     //update users role
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id
-      // console.log(id);
       const filter = { _id: new ObjectId(id) }
-      // console.log(filter);
       const updateDoc = {
         $set: {
           role: 'admin'
@@ -124,9 +127,7 @@ async function run() {
     //update instructor role
     app.patch('/users/instructor/:id', async (req, res) => {
       const id = req.params.id
-      // console.log(id);
       const filter = { _id: new ObjectId(id) }
-      // console.log(filter);
       const updateDoc = {
         $set: {
           role: 'instructor'
@@ -350,20 +351,6 @@ async function run() {
       res.send(result);
     });
 
-
-    // app.delete('/deleteInstructor', async (req, res) => {
-    //   const instructor = req.body;
-    //   console.log(instructor,'instructor');
-    //   const query = { email: instructor.email }
-    //   const existingInstructor = await instructorsCollection.findOne(query);
-
-    //   if (existingInstructor) {
-    //     return res.send({ message: 'instructor already exists' })
-    //   }
-    //   const result = await instructorsCollection.deleteOne(instructor);
-    //   res.send(result);
-    // });
-
     // select classes part
     app.get('/selectClasses', varifyJwt, async (req, res) => {
       const email = req.query.email
@@ -436,10 +423,6 @@ async function run() {
           { $set: { payment: true } }
         );
 
-
-        // console.log(updateResult, 'up');
-        // console.log(updateSelectClass, 'updates');
-
         res.send({ success: true, message: 'Payment successful', insertResult, updateResult, updateSelectClass });
       } catch (error) {
         res.status(500).send({ success: false, message: 'Payment failed', error });
@@ -477,7 +460,6 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
