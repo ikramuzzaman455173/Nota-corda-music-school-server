@@ -113,7 +113,7 @@ async function run() {
     })
 
     //update users role
-    app.patch('/users/admin/:id', async (req, res) => {
+    app.patch('/users/admin/:id',varifyJwt, async (req, res) => {
       const id = req.params.id
       // console.log(id);
       const filter = { _id: new ObjectId(id) }
@@ -128,7 +128,7 @@ async function run() {
     })
 
     //update instructor role
-    app.patch('/users/instructor/:id', async (req, res) => {
+    app.patch('/users/instructor/:id',varifyJwt, async (req, res) => {
       const id = req.params.id
       // console.log(id);
       const filter = { _id: new ObjectId(id) }
@@ -388,14 +388,14 @@ async function run() {
     })
 
 
-    app.post('/selectClasses', varifyJwt, async (req, res) => {
+    app.post('/selectClasses', async (req, res) => {
       const item = req.body
       // console.log(item,'item');
       const result = await selectClassesCollection.insertOne(item)
       res.send(result)
     })
 
-    app.delete('/selectClasses/:id', varifyJwt, async (req, res) => {
+    app.delete('/selectClasses/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await selectClassesCollection.deleteOne(query)
